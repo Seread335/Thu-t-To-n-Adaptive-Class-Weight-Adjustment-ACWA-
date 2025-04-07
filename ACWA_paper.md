@@ -1,6 +1,4 @@
-Dưới đây là phiên bản cải tiến của paper ACWA với cấu trúc rõ ràng, chuyên nghiệp và dễ hiểu hơn. Tôi đã tối ưu hóa nội dung, bổ sung chi tiết, và sắp xếp mạch lạc để phù hợp với tiêu chuẩn của một bài báo học thuật dài khoảng 8-10 trang (tương thích với hội nghị như CVPR/ICML). Tôi cũng giữ nguyên ý tưởng cốt lõi của bạn nhưng làm rõ hơn các phần để tăng tính thuyết phục và dễ tiếp cận.
 
----
 
 # **ACWA: Adaptive Class Weight Adjustment for Imbalanced Deep Learning**
 
@@ -10,12 +8,8 @@ Age: 17
 Address: Binh Tan, Vinh Long, Vietnam  
 Email: seread335@gmail.com  
 
----
-
 ## **Abstract**  
 Class imbalance poses a significant challenge in deep learning, often leading to poor performance on minority classes critical in applications like medical imaging. We introduce ACWA (Adaptive Class Weight Adjustment), a novel algorithm that dynamically adjusts class weights during training using real-time F1-score feedback. By employing a closed-loop system with exponential smoothing (β=0.9), ACWA increases weights for underperforming classes while maintaining training stability. Experiments on imbalanced CIFAR-10 and ISIC-2018 datasets show ACWA achieves macro F1-scores of 87.5% and 73.8%, respectively, outperforming focal loss (81.3% and 68.2%) with minimal computational overhead. Our approach offers a lightweight, adaptive solution for tackling class imbalance across domains.
-
----
 
 ## **1. Introduction**  
 Deep learning models excel in tasks with balanced datasets but often struggle when class distributions are skewed—a common scenario in real-world applications like fraud detection, rare disease diagnosis, and object recognition. Traditional methods, such as focal loss or class-balanced weighting, rely on static hyperparameters that fail to adapt to evolving training dynamics, leaving minority classes underrepresented.
@@ -27,14 +21,12 @@ We propose **ACWA**, a dynamic weighting strategy that adjusts class weights bas
 
 This paper is organized as follows: Section 2 reviews related work, Section 3 details the ACWA algorithm, Section 4 presents experimental results, and Section 5 concludes with future directions.
 
----
 
 ## **2. Related Work**  
 Class imbalance has been extensively studied in deep learning. **Focal Loss** (Lin et al., 2017) reduces the influence of well-classified samples but requires manual tuning of its γ parameter. **Class-Balanced Loss** (Cui et al., 2019) uses inverse class frequency, yet remains static throughout training. **LDAM** (Cao et al., 2019) incorporates label-distribution-aware margins but lacks adaptability to runtime performance shifts.
 
 Dynamic weighting methods, such as those in Chen et al. (2020), adjust weights based on loss gradients, but they often overlook minority class recall. ACWA addresses these gaps by leveraging F1-scores—a direct measure of class performance—and introducing a smoothed, adaptive update rule.
 
----
 
 ## **3. Methodology**  
 ### **3.1 Problem Setup**  
