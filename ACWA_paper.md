@@ -38,29 +38,26 @@ Dynamic weighting methods, such as those in Chen et al. (2020), adjust weights b
 
 ## **3. Methodology**  
 ### **3.1 Problem Setup**  
-Consider a classification task with \( C \) classes, where class \( c \) has \( N_c \) samples, and \( N_1 \gg N_2 \gg \dots \gg N_C \). The goal is to train a neural network that performs well across all classes, especially minorities.
-
+Consider a classification task with 𝐶 classes, where class 𝑐 has 𝑁𝑐 c  samples, and 𝑁1≫𝑁2≫⋯≫𝑁𝐶N ​ ≫N 2 ≫⋯≫NC​ . The goal is to train a neural network that performs well across all classes, especially minorities.
 ### **3.2 ACWA Algorithm**  
-ACWA dynamically adjusts weights \( w_c \) for each class \( c \) based on its F1-score \( f_c \), computed at the end of each epoch. The update rule is:  
-\[ w_c^{(t+1)} = \text{clip} \left( \beta w_c^{(t)} + (1 - \beta) \left( w_c^{(t)} + \alpha (f_{\text{target}} - f_c^{(t)}) \right), 0.5, 2.0 \right) \]  
-where:  
-- \( w_c^{(t)} \): Weight of class \( c \) at epoch \( t \).  
-- \( f_c^{(t)} \): F1-score of class \( c \) at epoch \( t \).  
-- \( f_{\text{target}} \): Target F1-score (set to 1.0 by default).  
-- \( \alpha \): Learning rate for weight updates.  
-- \( \beta \): Smoothing factor to stabilize updates.  
-- \( \text{clip}(\cdot, 0.5, 2.0) \): Constrains weights to prevent extreme values.
+ACWA dynamically adjusts weights w_c for each class c based on its F1-score f_c, computed at the end of each epoch. The update rule is:
+w_c^(t+1) = clip(β * w_c^t + (1 - β) * (w_c^t + α * (f_target - f_c^t)), 0.5, 2.0) 
+Where:
 
-#### **Hyperparameters**  
-| Parameter    | Role                          | Recommended Value |  
-|--------------|-------------------------------|-------------------|  
-| \( \alpha \) | Controls update speed         | 0.02              |  
-| \( \beta \)  | Balances memory vs innovation | 0.9               |  
-
-#### **Intuition**  
-- If \( f_c < f_{\text{target}} \), the error \( e_c = f_{\text{target}} - f_c \) is positive, increasing \( w_c \) to emphasize class \( c \).  
-- Exponential smoothing (\( \beta w_c^{(t)} \)) retains historical weights, avoiding instability from noisy F1-scores.  
-- Clipping ensures weights remain practical for training.
+w_c^t: Weight of class c at epoch t.
+f_c^t: F1-score of class c at epoch t.
+f_target: Target F1-score (set to 1.0 by default).
+α: Learning rate for weight updates.
+β: Smoothing factor to stabilize updates.
+clip(·, 0.5, 2.0): Constrains weights to prevent extreme values.
+Hyperparameters
+Parameter	Role	Recommended Value
+α	Controls update speed	0.02
+β	Balances memory vs innovation	0.9
+Intuition
+If f_c < f_target, the error e_c = f_target - f_c is positive, increasing w_c to emphasize class c.
+Exponential smoothing (β * w_c^t) retains historical weights, avoiding instability from noisy F1-scores.
+Clipping ensures weights remain practical for training.
 
 ### **3.3 Pseudocode**  
 ```python
@@ -121,8 +118,8 @@ ACWA offers a robust, adaptive solution for class imbalance, outperforming stati
 
 ## **Appendices**  
 ### **A. Convergence Proof**  
-**Theorem 1**: For \( \beta \in (0,1) \) and \( |e_c| < \frac{1-\beta}{\alpha} \), weights \( w_c \) converge to a stable value.  
-*Proof*: The update rule is a contraction mapping under the given condition (details in supplementary material).
+Theorem 1: For β ∈ (0,1) and |e_c| < (1 - β) / α, the weights w_c converge to a stable value.
+Proof: The update rule forms a contraction mapping under the given condition. Full derivation available in the supplementary material.
 
 ### **B. Implementation Details**  
 - Optimizer: Adam (lr=0.001).  
