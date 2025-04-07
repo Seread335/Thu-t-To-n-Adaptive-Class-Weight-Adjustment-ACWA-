@@ -131,8 +131,4 @@ ACWA offers a robust, adaptive solution for class imbalance, outperforming stati
 - Code: [GitHub Link](https://github.com/Seread335/Thu-t-To-n-Adaptive-Class-Weight-Adjustment-ACWA-.git).
 
 
-**Next Steps**:  
-1. Format in LaTeX (NeurIPS template recommended).  
-2. Submit to arXiv, then target CVPR/ICML workshops.  
-3. Add affiliation if possible (e.g., school or mentor’s institution).
 
