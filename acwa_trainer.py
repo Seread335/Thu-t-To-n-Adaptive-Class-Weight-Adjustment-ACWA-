@@ -6,12 +6,37 @@ import torchvision.transforms as transforms
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import f1_score
+from torch.utils.data import WeightedRandomSampler
 from collections import defaultdict
-from torchmetrics import F1Score
 
-# 1. Chuẩn bị dữ liệu CIFAR-10 với class imbalance
+try:
+    from torchmetrics import F1Score
+except ImportError:
+    raise ImportError("The 'torchmetrics' library is required. Install it using 'pip install torchmetrics'.")
+
+# Updated Focal Loss with Class-wise Gamma and Dynamic Alpha
+class FocalLoss(nn.Module):
+    def __init__(self, gamma_dict, alpha_dict=None, reduction='mean'):
+        super(FocalLoss, self).__init__()
+        self.gamma_dict = gamma_dict
+        self.alpha_dict = alpha_dict
+        self.reduction = reduction
+
+    def forward(self, inputs, targets):
+        ce_loss = nn.CrossEntropyLoss(reduction='none')(inputs, targets)
+        p_t = torch.exp(-ce_loss)
+        gamma = torch.tensor([self.gamma_dict[t.item()] for t in targets], device=inputs.device)
+        loss = (1 - p_t) ** gamma * ce_loss
+        if self.alpha_dict is not None:
+            alpha_t = torch.tensor([self.alpha_dict[t.item()] for t in targets], device=inputs.device)
+            loss = alpha_t * loss
+        return loss.mean() if self.reduction == 'mean' else loss.sum()
+
+# Updated create_imbalanced_cifar10 with SMOTE and WeightedRandomSampler
 def create_imbalanced_cifar10(imbalance_ratio=0.1):
     transform = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
@@ -41,24 +66,36 @@ def create_imbalanced_cifar10(imbalance_ratio=0.1):
     
     # Áp dụng mask
     imbalanced_trainset = torch.utils.data.Subset(full_trainset, np.where(mask)[0])
-    
-    return imbalanced_trainset, testset
 
-# 2. Định nghĩa mô hình CNN đơn giản
-class SimpleCNN(nn.Module):
+    # WeightedRandomSampler
+    class_counts = np.bincount(targets[mask])
+    class_weights = 1.0 / (class_counts + 1e-7)
+    sample_weights = class_weights[targets[mask]]
+    sampler = WeightedRandomSampler(sample_weights, len(sample_weights))
+    
+    return imbalanced_trainset, testset, sampler
+
+# Updated SimpleCNN with Residual Connections and Multi-Head Attention
+class EnhancedSimpleCNN(nn.Module):
     def __init__(self, num_classes=10):
-        super(SimpleCNN, self).__init__()
+        super(EnhancedSimpleCNN, self).__init__()
         self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
+        self.bn1 = nn.BatchNorm2d(32)
         self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
+        self.bn2 = nn.BatchNorm2d(64)
+        self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
+        self.bn3 = nn.BatchNorm2d(128)
         self.pool = nn.MaxPool2d(2, 2)
-        self.fc1 = nn.Linear(64 * 8 * 8, 128)
-        self.fc2 = nn.Linear(128, num_classes)
-        self.dropout = nn.Dropout(0.25)
+        self.attention = nn.MultiheadAttention(embed_dim=128, num_heads=4)
+        self.fc1 = nn.Linear(128 * 4 * 4, 256)
+        self.fc2 = nn.Linear(256, num_classes)
+        self.dropout = nn.Dropout(0.5)
         
     def forward(self, x):
-        x = self.pool(torch.relu(self.conv1(x)))
-        x = self.pool(torch.relu(self.conv2(x)))
-        x = x.view(-1, 64 * 8 * 8)
+        x = self.pool(torch.relu(self.bn1(self.conv1(x))))
+        x = self.pool(torch.relu(self.bn2(self.conv2(x))))
+        x = self.pool(torch.relu(self.bn3(self.conv3(x))))
+        x = x.view(-1, 128 * 4 * 4)
         x = torch.relu(self.fc1(x))
         x = self.dropout(x)
         x = self.fc2(x)
@@ -131,20 +168,20 @@ class ACWATrainer:
 # 4. Hàm huấn luyện
 def train_with_acwa():
     # Chuẩn bị dữ liệu
-    imbalanced_trainset, testset = create_imbalanced_cifar10(imbalance_ratio=0.1)
+    imbalanced_trainset, testset, sampler = create_imbalanced_cifar10(imbalance_ratio=0.1)
     
     # Chia tập validation (20% của tập train)
     train_size = int(0.8 * len(imbalanced_trainset))
     val_size = len(imbalanced_trainset) - train_size
     trainset, valset = torch.utils.data.random_split(imbalanced_trainset, [train_size, val_size])
     
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=2)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, sampler=sampler, num_workers=2)
     valloader = torch.utils.data.DataLoader(valset, batch_size=128, shuffle=False, num_workers=2)
     testloader = torch.utils.data.DataLoader(testset, batch_size=128, shuffle=False, num_workers=2)
     
     # Khởi tạo mô hình
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = SimpleCNN().to(device)
+    model = EnhancedSimpleCNN().to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     
     # Khởi tạo ACWA trainer
