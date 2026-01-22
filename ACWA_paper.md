@@ -5,7 +5,7 @@
 **Authors**:  
 Huỳnh Thái Bảo  
 Age: 17  
-Address: Binh Tan, Vinh Long, Vietnam  
+Address: Cần Thơ, Vietnam  
 Email: seread335@gmail.com  
 
 ## **Abstract**  
@@ -118,6 +118,7 @@ Proof: The update rule forms a contraction mapping under the given condition. Fu
 - Batch size: 128.  
 - Epochs: 100.  
 - Code: [GitHub Link](https://github.com/Seread335/Thu-t-To-n-Adaptive-Class-Weight-Adjustment-ACWA-.git).
+
 
 
 
